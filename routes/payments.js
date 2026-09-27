@@ -107,11 +107,21 @@ router.post("/watchpay/create", async (req, res) => {
 
     if (!response.ok) return res.status(502).json({ message: "Payment gateway request failed" });
 
+    // WatchPay may return the checkout link under different keys depending on pay_type,
+    // so pick the first usable one instead of assuming a single shape.
+    const checkoutUrl =
+      (typeof payload?.payInfo === "string" && payload.payInfo) ||
+      payload?.payInfo?.url ||
+      payload?.payInfo?.payUrl ||
+      payload?.url ||
+      payload?.payUrl ||
+      null;
+
     res.status(201).json({
       orderId: payment._id,
       bookingId: order._id,
-      payInfo: payload?.payInfo,
-      html: payload ? null : text,
+      checkoutUrl,
+      html: checkoutUrl ? null : text,
     });
   } catch (error) {
     res.status(500).json({ message: "Unable to start payment", error: error.message });
